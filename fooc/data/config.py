@@ -16,6 +16,18 @@ def add_fooc_config(cfg):
     # _C.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
     # _C.MODEL.WEIGHTS = '/lhome/peizhli/projects/model_zoo/model_final_f97cb7.pkl' # original Resnet model
     _C.MODEL.WEIGHTS = '/lhome/peizhli/projects/FOOC/baseline/cityscapes_iter50000/model_final.pth'
+    
+    _C.MODEL.IMG_FDA_HEAD.NAME = 'IMG_FDA_HEAD'
+    _C.MODEL.IMG_FDA_HEAD.GRL_GAMMA = 0.1
+    _C.MODEL.IMG_FDA_HEAD.LOSS_LAMBDA = 1.0
+    _C.MODEL.IMG_FDA_HEAD.LOSS_TYPE = "cross_entropy"
+    _C.MODEL.IMG_FDA_HEAD.FOCAL_GAMMA = 3.
+
+    _C.MODEL.INSTANCE_FDA_HEAD.NAME = 'INSTANCE_FDA_HEAD'
+    _C.MODEL.INSTANCE_FDA_HEAD.GRL_GAMMA = 0.1
+    _C.MODEL.INSTANCE_FDA_HEAD.LOSS_LAMBDA = 1.0
+    _C.MODEL.INSTANCE_FDA_HEAD.LOSS_TYPE = "cross_entropy"
+    _C.MODEL.INSTANCE_FDA_HEAD.FOCAL_GAMMA = 3.
 
     _C.SOLVER.IMS_PER_BATCH = 6
     _C.SOLVER.BASE_LR = 1e-4
@@ -54,27 +66,27 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS.CITYSCAPES = CN()
     _C.FOOC.DATASETS.CITYSCAPES.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "source"
+    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "target"
     _C.FOOC.DATASETS.CITYSCAPES.LABEL_SPACE = "Cityscapes"
     _C.FOOC.DATASETS.CITYSCAPES.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.FOGGYCITYSCAPES = CN()
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.FOGGYCITYSCAPES.DOMAIN = "target"
+    _C.FOOC.DATASETS.FOGGYCITYSCAPES.DOMAIN = "source"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LABEL_SPACE = "Cityscapes"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LOAD_MASKS = True
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.BETA = 0.01
 
     _C.FOOC.DATASETS.SIM10K = CN()
     _C.FOOC.DATASETS.SIM10K.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.SIM10K.DOMAIN = "target"
+    _C.FOOC.DATASETS.SIM10K.DOMAIN = "source"
     # "Sim10k" or "Sim10kCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.SIM10K.LABEL_SPACE = "Sim10kCityscapesCommon"
     _C.FOOC.DATASETS.SIM10K.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.KITTI = CN()
     _C.FOOC.DATASETS.KITTI.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.KITTI.DOMAIN = "target"
+    _C.FOOC.DATASETS.KITTI.DOMAIN = "source"
     # "Kitti" or "KittiCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.KITTI.LABEL_SPACE = "KittiCityscapesCommon"
     # Kitti object challenge has no instance masks

@@ -11,6 +11,24 @@ IMG_FDA_HEAD_REGISTRY = Registry("IMG_FDA_HEAD")
 INSTANCE_FDA_HEAD_REGISTRY = Registry("INSTANCE_FDA_HEAD")
 
 
+def build_instance_fda_head(cfg, input_shape):
+    """
+    Build a ROI-level feature distribution alignment head
+    defined by `cfg.MODEL.ROI_FDA_HEAD.NAME`.
+    """
+    head_name = cfg.MODEL.INSTANCE_FDA_HEAD.NAME
+    return INSTANCE_FDA_HEAD_REGISTRY.get(head_name)(cfg, input_shape)
+
+
+def build_img_fda_head(cfg, input_shape):
+    """
+    Build a image-level feature distribution alignment head
+    defined by `cfg.MODEL.IMG_FDA_HEAD.NAME`.
+    """
+    head_name = cfg.MODEL.IMG_FDA_HEAD.NAME
+    return IMG_FDA_HEAD_REGISTRY.get(head_name)(cfg, input_shape)
+
+
 class GradientReversalLayer(nn.Module):
     """
     Flips and scales the gradients during backpropagation
@@ -48,41 +66,30 @@ class ImageFDAHead(nn.Module):
         GRL_gamma = cfg.MODEL.IMG_FDA_HEAD.GRL_GAMMA
         loss_lambda = cfg.MODEL.IMG_FDA_HEAD.LOSS_LAMBDA
         loss_type = cfg.MODEL.IMG_FDA_HEAD.LOSS_TYPE
+        focal_gamma = cfg.MODEL.IMG_FDA_HEAD.FOCAL_GAMMA
 
         # ----- Module Architecture ----- #
-        self.GRL = nn.Sequential(
-            OrderedDict([
-                ('IMG_GRL', GradientReversalLayer(GRL_gamma)),
-            ])
-        )  # Grad Reversal Layer
+        self.GRL = nn.Sequential(OrderedDict([
+            ('IMG_GRL', GradientReversalLayer(GRL_gamma)),
+        ]))  # Grad Reversal Layer
 
-        self.conv1 = nn.Sequential(
-            OrderedDict([
-                ('IMG_conv1', nn.Conv2d(
-                    in_channels=input_shape.channels,
-                    out_channels=512,
-                    kernel_size=1,
-                    stride=1
-                )),
-            ])
-        )  # First Convolutional Layers
+        self.conv1 = nn.Sequential(OrderedDict([
+            ('IMG_conv1', nn.Conv2d(in_channels=input_shape.channels,
+                                    out_channels=512,
+                                    kernel_size=1,
+                                    stride=1)),
+        ]))  # First Convolutional Layers
 
-        self.relu = nn.Sequential(
-            OrderedDict([
-                ('IMG_ReLU', nn.ReLU()),
-            ])
-        )   # ReLU Layers
+        self.relu = nn.Sequential(OrderedDict([
+            ('IMG_ReLU', nn.ReLU()),
+        ]))   # ReLU Layers
 
-        self.conv2 = nn.Sequential(
-            OrderedDict([
-                ('IMG_conv2', nn.Conv2d(
-                    in_channels=512,
-                    out_channels=num_domains if num_domains != 2 else 1,
-                    kernel_size=1,
-                    stride=1
-                )),
-            ])
-        )  # Second Convolutional Layers
+        self.conv2 = nn.Sequential(OrderedDict([
+            ('IMG_conv2', nn.Conv2d(in_channels=512,
+                                    out_channels=num_domains if num_domains != 2 else 1,
+                                    kernel_size=1,
+                                    stride=1)),
+        ]))  # Second Convolutional Layers
 
         # ----- Initialization -----#
         for layer in [self.conv1[0], self.conv2[0]]:
@@ -90,12 +97,10 @@ class ImageFDAHead(nn.Module):
             nn.init.constant_(layer.bias, 0)
 
             if cfg.MODEL.INSTANCE_FDA_HEAD.SN:
-                layer = nn.utils.spectral_norm(
-                    layer, name='weight', n_power_iterations=1
-                )
+                layer = nn.utils.spectral_norm(layer, name='weight', n_power_iterations=1)
 
         # ----- Loss -----#
-        self.loss = ImageFDALoss(loss_lambda, loss_type)
+        self.loss = ImageFDALoss(loss_lambda, loss_type, focal_gamma)
 
         self.to(self.device)
 
@@ -123,40 +128,33 @@ class InstanceFDAHead(nn.Module):
         self.device = torch.device(cfg.MODEL.DEVICE)
 
         num_domains = cfg.FOOC.NUM_DOMAINS
-        GRL_gamma = cfg.MODEL.IMG_FDA_HEAD.GRL_GAMMA
-        loss_lambda = cfg.MODEL.IMG_FDA_HEAD.LOSS_LAMBDA
-        loss_type = cfg.MODEL.IMG_FDA_HEAD.LOSS_TYPE
+        GRL_gamma = cfg.MODEL.INSTANCE_FDA_HEAD.GRL_GAMMA
+        loss_lambda = cfg.MODEL.INSTANCE_FDA_HEAD.LOSS_LAMBDA
+        loss_type = cfg.MODEL.INSTANCE_FDA_HEAD.LOSS_TYPE
+        focal_gamma = cfg.MODEL.INSTANCE_FDA_HEAD.FOCAL_GAMMA
 
         # ----- Module Architecture ----- #
-        self.GRL = nn.Sequential(
-            OrderedDict([
-                ('INSTANCE_GRL', GradientReversalLayer(GRL_gamma)),
-            ])
-        )  # Grad Reversal Layer
+        self.GRL = nn.Sequential(OrderedDict([
+            ('INSTANCE_GRL', GradientReversalLayer(GRL_gamma)),
+        ]))  # Grad Reversal Layer
 
-        self.fc1 = nn.Sequential(
-            OrderedDict([
-                ('INSTANCE_flatten', nn.flatten()),
-                ('INSTANCE_linear1', nn.Linear(input_shape.channels
-                 * input_shape.height * input_shape.width, 1024)),
-                ('INSTANCE_ReLU1', nn.ReLU()),
-                ('INSTANCE_dropout1', nn.Dropout(p=0.5)),
-            ])
-        )  # First FC Layer
+        self.fc1 = nn.Sequential(OrderedDict([
+            ('INSTANCE_flatten', nn.flatten()),
+            ('INSTANCE_linear1', nn.Linear(input_shape.channels
+                                           * input_shape.height * input_shape.width, 1024)),
+            ('INSTANCE_ReLU1', nn.ReLU()),
+            ('INSTANCE_dropout1', nn.Dropout(p=0.5)),
+        ]))  # First FC Layer
 
-        self.fc2 = nn.Sequential(
-            OrderedDict([
-                ('INSTANCE_linear2', nn.Linear(1024, 1024)),
-                ('INSTANCE_ReLU2', nn.ReLU()),
-                ('INSTANCE_dropout2', nn.Dropout(p=0.5)),
-            ])
-        )  # Second FC Layer
+        self.fc2 = nn.Sequential(OrderedDict([
+            ('INSTANCE_linear2', nn.Linear(1024, 1024)),
+            ('INSTANCE_ReLU2', nn.ReLU()),
+            ('INSTANCE_dropout2', nn.Dropout(p=0.5)),
+        ]))  # Second FC Layer
 
-        self.logits = nn.Sequential(
-            OrderedDict([
-                ('INSTANCE_logits', nn.Linear(1024, num_domains if num_domains != 2 else 1)),
-            ])
-        )  # Logits Layer
+        self.logits = nn.Sequential(OrderedDict([
+            ('INSTANCE_logits', nn.Linear(1024, num_domains if num_domains != 2 else 1)),
+        ]))  # Logits Layer
 
         # ----- Initialization -----#
         for idx, layer in enumerate([self.fc1[1], self.fc2[0], self.logits[0]]):
@@ -164,12 +162,10 @@ class InstanceFDAHead(nn.Module):
             nn.init.constant_(layer.bias, 0)
 
             if cfg.MODEL.INSTANCE_FDA_HEAD.SN:
-                layer = nn.utils.spectral_norm(
-                    layer, name='weight', n_power_iterations=1
-                )
+                layer = nn.utils.spectral_norm(layer, name='weight', n_power_iterations=1)
 
         # ----- Loss -----#
-        self.loss = InstanceFDALoss(loss_lambda, loss_type)
+        self.loss = InstanceFDALoss(loss_lambda, loss_type, focal_gamma)
 
         self.to(self.device)
 
