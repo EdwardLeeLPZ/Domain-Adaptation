@@ -40,7 +40,7 @@ class _GradientReverser(autograd.Function):
 
 @IMG_FDA_HEAD_REGISTRY.register()
 class ImageFDAHead(nn.Module):
-    def __init__(self, cfg, input_shapes) -> None:
+    def __init__(self, cfg, input_shape) -> None:
         super().__init__()
         self.device = torch.device(cfg.MODEL.DEVICE)
 
@@ -50,43 +50,48 @@ class ImageFDAHead(nn.Module):
         loss_type = cfg.MODEL.IMG_FDA_HEAD.LOSS_TYPE
 
         # ----- Module Architecture ----- #
-        self.GRLs = nn.ModuleDict()  # Grad Reversal Layers
-        self.convs1 = nn.ModuleDict()  # First Convolutional Layers
-        self.relus = nn.ModuleDict()  # ReLU Layers
-        self.convs2 = nn.ModuleDict()  # Second Convolutional Layers
+        self.GRL = nn.Sequential(
+            OrderedDict([
+                ('IMG_GRL', GradientReversalLayer(GRL_gamma)),
+            ])
+        )  # Grad Reversal Layer
 
-        for idx, shape in enumerate(input_shapes):
-            self.GRLs.append(
-                {'IMG_GRL_' + str(idx): GradientReversalLayer(GRL_gamma)},
-            )
-            self.convs1.append(
-                {'IMG_convs1_' + str(idx): nn.Conv2d(
-                    in_channels=shape,
-                    out_channels=shape,
+        self.conv1 = nn.Sequential(
+            OrderedDict([
+                ('IMG_conv1', nn.Conv2d(
+                    in_channels=input_shape.channels,
+                    out_channels=512,
                     kernel_size=1,
                     stride=1
-                )},
-            )
-            self.relus.append(
-                {'IMG_ReLU_' + str(idx): nn.ReLU()},
-            )
-            self.convs2.append(
-                {'IMG_convs2_' + str(idx): nn.Conv2d(
-                    in_channels=shape,
-                    out_channels=num_domains,
+                )),
+            ])
+        )  # First Convolutional Layers
+
+        self.relu = nn.Sequential(
+            OrderedDict([
+                ('IMG_ReLU', nn.ReLU()),
+            ])
+        )   # ReLU Layers
+
+        self.conv2 = nn.Sequential(
+            OrderedDict([
+                ('IMG_conv2', nn.Conv2d(
+                    in_channels=512,
+                    out_channels=num_domains if num_domains != 2 else 1,
                     kernel_size=1,
                     stride=1
-                )},
-            )
+                )),
+            ])
+        )  # Second Convolutional Layers
 
         # ----- Initialization -----#
-        for name, conv in [*self.convs1, *self.convs2]:
-            torch.nn.init.normal_(conv.weight, std=0.01)
-            torch.nn.init.constant_(conv.bias, 0)
+        for layer in [self.conv1[0], self.conv2[0]]:
+            nn.init.normal_(layer.weight, std=0.001)
+            nn.init.constant_(layer.bias, 0)
 
-            if cfg.MODEL.IMG_FDA_HEAD.SN:
-                conv = nn.utils.spectral_norm(
-                    conv, name='weight', n_power_iterations=1
+            if cfg.MODEL.INSTANCE_FDA_HEAD.SN:
+                layer = nn.utils.spectral_norm(
+                    layer, name='weight', n_power_iterations=1
                 )
 
         # ----- Loss -----#
@@ -98,15 +103,13 @@ class ImageFDAHead(nn.Module):
         if not self.training:
             return [], {}
 
-        logits = []
-        for idx, f in enumerate(self.in_features):
-            x = features[f]
-            if not skip_GRL:
-                x = self.GRLs[idx](x)
-            x = self.convs1[idx](x)
-            x = self.relus[idx](x)
-            x = self.convs2[idx](x)
-            logits.append(x)
+        x = features
+        if not skip_GRL:
+            x = self.GRL(x)
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        logits = x
 
         loss = self.loss(logits, targets)
 
@@ -151,13 +154,13 @@ class InstanceFDAHead(nn.Module):
 
         self.logits = nn.Sequential(
             OrderedDict([
-                ('INSTANCE_logits', nn.Linear(1024, num_domains)),
+                ('INSTANCE_logits', nn.Linear(1024, num_domains if num_domains != 2 else 1)),
             ])
         )  # Logits Layer
 
         # ----- Initialization -----#
-        for layer in [self.fc1[1], self.fc2[0], self.logits[0]]:
-            nn.init.normal_(layer.weight, std=0.01)
+        for idx, layer in enumerate([self.fc1[1], self.fc2[0], self.logits[0]]):
+            nn.init.normal_(layer.weight, std=0.01 if idx < 2 else 0.05)
             nn.init.constant_(layer.bias, 0)
 
             if cfg.MODEL.INSTANCE_FDA_HEAD.SN:

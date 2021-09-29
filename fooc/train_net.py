@@ -54,8 +54,8 @@ from detectron2.evaluation import (
 from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils.visualizer import Visualizer, ColorMode
 
-from fooc.config import add_fooc_config
-from fooc.data.datasets import (
+from data.config import add_fooc_config
+from data.datasets.register_datasets import (
     register_cityscapes,
     register_foggy_cityscapes,
     register_sim10k,
