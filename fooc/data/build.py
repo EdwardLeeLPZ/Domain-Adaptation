@@ -21,6 +21,7 @@ from detectron2.data.dataset_mapper import DatasetMapper
 from detectron2.data.detection_utils import check_metadata_consistency
 from detectron2.data.samplers import InferenceSampler, RepeatFactorTrainingSampler, TrainingSampler
 
+from .mappers import DatasetMapperWrapper, ExtendedDatasetMapper
 from .samplers import EquallyDatasetsTrainingSampler
 
 """
@@ -34,6 +35,8 @@ __all__ = [
     "get_detection_dataset_dicts",
     "load_proposals_into_dataset",
     "print_instances_class_histogram",
+    "match_dataset_dicts_lengths",
+    "merge_dataset_dicts_list",
 ]
 
 
@@ -241,7 +244,8 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
     # original datasets merging
     # dataset_dicts = list(itertools.chain.from_iterable(dataset_dicts))
     # DA datasets merging
-    dataset_dicts, dataset_indices=merge_dataset_dicts_list(dataset_dicts_list=dataset_dicts, equal_frequency=equal_frequency)
+    dataset_dicts, dataset_indices = merge_dataset_dicts_list(
+        dataset_dicts_list=dataset_dicts, equal_frequency=equal_frequency)
     dataset_name_to_indices = {
         name: indices for name, indices in zip(names, dataset_indices)
     }
@@ -261,7 +265,7 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
             pass
 
     assert len(dataset_dicts), "No valid data found in {}.".format(",".join(names))
-    return dataset_dicts, dataset_name_to_indices # DA specialization 
+    return dataset_dicts, dataset_name_to_indices  # DA specialization
 
 
 def build_batch_data_loader(
@@ -322,12 +326,22 @@ def _train_loader_from_config(cfg, mapper=None, *, dataset=None, sampler=None):
             if cfg.MODEL.KEYPOINT_ON
             else 0,
             proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
-            equal_frequency=cfg.DATASETS.SOURCE_TARGET_EQUAL_FREQUENCY,
-        ) # DA specialization 
+            equal_frequency=cfg.FOOC.DATASETS.SOURCE_TARGET_EQUAL_FREQUENCY,
+        )  # DA specialization
         _log_api_usage("dataset." + cfg.DATASETS.TRAIN[0])
 
     if mapper is None:
-        mapper = DatasetMapper(cfg, True)
+        # original datasets mapper
+        # mapper = DatasetMapper(cfg, True)
+        # DA datasets mapper
+        mapper_name = cfg.DATALOADER.MAPPER_TRAIN
+        if mapper_name == "DatasetMapperWrapper":
+            mapper = DatasetMapperWrapper(cfg, True)
+        elif mapper_name == "ExtendedDatasetMapper":
+            mapper = ExtendedDatasetMapper(cfg, True)
+        else:
+            raise ValueError("Unknown training mapper: {}".format(mapper_name))
+    dataset = MapDataset(dataset, mapper)
 
     if sampler is None:
         sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
@@ -340,11 +354,12 @@ def _train_loader_from_config(cfg, mapper=None, *, dataset=None, sampler=None):
                 dataset, cfg.DATALOADER.REPEAT_THRESHOLD
             )
             sampler = RepeatFactorTrainingSampler(repeat_factors)
+        # DA datasets sampler
         elif sampler_name == "EquallyDatasetsTrainingSampler":
             sampler = EquallyDatasetsTrainingSampler(
                 dataset_dicts=dataset, dataset_name_to_indices=dataset_name_to_indices, shuffle=True,
                 dataset_selection_type=cfg.DATALOADER.SELECTION_TYPE,
-            )    
+            )
         else:
             raise ValueError("Unknown training sampler: {}".format(sampler_name))
 
@@ -421,7 +436,17 @@ def _test_loader_from_config(cfg, dataset_name, mapper=None):
         else None,
     )
     if mapper is None:
-        mapper = DatasetMapper(cfg, False)
+        # original datasets mapper
+        # mapper = DatasetMapper(cfg, False)
+        # DA datasets mapper
+        mapper_name = cfg.DATALOADER.MAPPER_TEST
+        if mapper_name == "DatasetMapperWrapper":
+            mapper = DatasetMapperWrapper(cfg, False)
+        elif mapper_name == "ExtendedDatasetMapper":
+            mapper = ExtendedDatasetMapper(cfg, False)
+        else:
+            raise ValueError("Unknown training mapper: {}".format(mapper_name))
+    dataset = MapDataset(dataset, mapper)
     return {"dataset": dataset, "mapper": mapper, "num_workers": cfg.DATALOADER.NUM_WORKERS}
 
 
@@ -520,6 +545,7 @@ def match_dataset_dicts_lengths(dataset_dicts_list):
         for dataset_dicts in map(itertools.cycle, dataset_dicts_list)
     ]
     return dataset_dicts_list
+
 
 def merge_dataset_dicts_list(dataset_dicts_list, equal_frequency: bool):
     """

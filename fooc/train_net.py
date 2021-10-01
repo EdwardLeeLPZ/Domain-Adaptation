@@ -27,8 +27,6 @@ from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import (
     MetadataCatalog,
-    build_detection_test_loader,
-    build_detection_train_loader,
     DatasetMapper,
 )
 import detectron2.data.transforms as T
@@ -60,6 +58,10 @@ from data.datasets.register_datasets import (
     register_foggy_cityscapes,
     register_sim10k,
     register_kitti,
+)
+from data.build import (
+    build_detection_train_loader,
+    build_detection_test_loader,
 )
 
 class Trainer(DefaultTrainer):
@@ -137,13 +139,13 @@ class Trainer(DefaultTrainer):
 
     @classmethod
     def build_train_loader(cls, cfg):
-        """resize the shorter sides of all images to 600 pixel"""
-        return build_detection_train_loader(cfg, mapper=DatasetMapper(cfg, is_train=True, augmentations=[T.ResizeShortestEdge(short_edge_length=[600], sample_style="choice")]))
+        """"""
+        return build_detection_train_loader(cfg)
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
-        """resize the shorter sides of all images to 600 pixel"""
-        return build_detection_test_loader(cfg, dataset_name, mapper=DatasetMapper(cfg, is_train=False, augmentations=[T.ResizeShortestEdge(short_edge_length=[600], sample_style="choice")]))
+        """"""
+        return build_detection_test_loader(cfg, dataset_name)
 
 
 def setup(args):

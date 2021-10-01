@@ -11,7 +11,11 @@ def add_fooc_config(cfg):
     # "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
     _C.DATASETS.TEST = ("Cityscapes_val",)
 
-    _C.DATALOADER.NUM_WORKERS = 4
+    _C.DATALOADER.NUM_WORKERS = 2
+    _C.DATALOADER.MAPPER_TRAIN = 'DatasetMapperWrapper'
+    _C.DATALOADER.MAPPER_TEST = 'ExtendedDatasetMapper'
+    _C.DATALOADER.SAMPLER_TRAIN = 'EquallyDatasetsTrainingSampler'
+    _C.DATALOADER.SELECTION_TYPE = 'simple'
 
     # _C.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
     # _C.MODEL.WEIGHTS = '/lhome/peizhli/projects/model_zoo/model_final_f97cb7.pkl' # original Resnet model
@@ -63,6 +67,7 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS = CN()
     _C.FOOC.DATASETS.ONLINE_LOADING = False
+    _C.FOOC.DATASETS.SOURCE_TARGET_EQUAL_FREQUENCY = True
 
     _C.FOOC.DATASETS.CITYSCAPES = CN()
     _C.FOOC.DATASETS.CITYSCAPES.SUBSAMPLE = -1
