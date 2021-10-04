@@ -20,7 +20,7 @@ from detectron2.structures import (
 )
 
 
-from .datasets import cslike_files_to_dict
+from .datasets.register_datasets import cityscapes_sample_to_dict
 
 
 class DatasetMapperWrapper(DatasetMapper):
@@ -58,15 +58,10 @@ class ExtendedDatasetMapper(DatasetMapper):
     def __init__(self, cfg, is_train):
         super().__init__(cfg, is_train)
 
-        if cfg.SUDA.AUGMENTATIONS:
+        if cfg.FOOC.AUGMENTATIONS:
             self.tfm_gens = utils.build_transform_gen(cfg, is_train)
         else:
             self.tfm_gens = []
-
-        if cfg.SUDA.TASK == "detection_3d":
-            for item in self.tfm_gens:
-                if isinstance(item, T.RandomFlip):
-                    self.tfm_gens.remove(item)
 
         self.clip_boxes = cfg.DATALOADER.CLIP_BOXES_TO_IMAGE_SIZE
 
@@ -85,7 +80,7 @@ class ExtendedDatasetMapper(DatasetMapper):
         """
         dataset_dict = copy.deepcopy(dataset_dict)  # it will be modified by code below
         # USER: Write your own image loading if it's not from a file
-        image = utils.read_image(dataset_dict["file_name"], format=self.img_format)
+        image = utils.read_image(dataset_dict["file_name"], format=self.image_format)
         utils.check_image_size(dataset_dict, image)
 
         # USER: Remove if you don't do semantic/panoptic segmentation.
@@ -122,9 +117,9 @@ class ExtendedDatasetMapper(DatasetMapper):
         if "annotations" in dataset_dict:
             # USER: Modify this if you want to keep them for some reason.
             for anno in dataset_dict["annotations"]:
-                if not self.mask_on:
+                if not self.use_instance_mask:
                     anno.pop("segmentation", None)
-                if not self.keypoint_on:
+                if not self.use_keypoint:
                     anno.pop("keypoints", None)
 
             # USER: Implement additional transformations if you have other types of data
@@ -188,7 +183,7 @@ class OnlineDatasetMapper(DatasetMapper):
         dataset_opts = getattr(self._cfg.SUDA.DATASETS, dataset)
 
         # load annotations, extract bounding boxes etc.
-        dataset_dict = cslike_files_to_dict(files, dataset_opts.DOMAIN, dataset_opts.LOAD_MASKS)
+        dataset_dict = cityscapes_sample_to_dict(files, dataset_opts.DOMAIN, dataset_opts.LOAD_MASKS)
 
         # Map cityscapes ids to contiguous ids
         from cityscapesscripts.helpers.labels import labels

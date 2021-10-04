@@ -50,9 +50,10 @@ from detectron2.evaluation import (
     verify_results,
 )
 from detectron2.modeling import GeneralizedRCNNWithTTA
+from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import Visualizer, ColorMode
 
-from data.config import add_fooc_config
+from configs.config import add_fooc_config
 from data.datasets.register_datasets import (
     register_cityscapes,
     register_foggy_cityscapes,
@@ -63,6 +64,7 @@ from data.build import (
     build_detection_train_loader,
     build_detection_test_loader,
 )
+from model import da_rcnn
 
 class Trainer(DefaultTrainer):
     """
@@ -154,10 +156,12 @@ def setup(args):
     """
     cfg = get_cfg()
     add_fooc_config(cfg)
-    # cfg.merge_from_file(args.config_file)
+    cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
+    
     default_setup(cfg, args)
+    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="suda")
 
     root_dir = cfg.DATASETS.ROOT_DIR
     register_cityscapes(cfg, root_dir)

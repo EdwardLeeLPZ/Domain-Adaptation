@@ -1,11 +1,20 @@
 from typing_extensions import OrderedDict
 import torch
-from torch import nn, autograd as nn, autograd
+from torch import nn as nn
+from torch import autograd as autograd
 from torch.nn.modules import flatten
 
 from detectron2.utils.registry import Registry
 
-from loss import ImageFDALoss, InstanceFDALoss
+from .loss import ImageFDALoss, InstanceFDALoss
+
+__all__ = [
+    "build_instance_fda_head",
+    "build_img_fda_head",
+    "GradientReversalLayer",
+    "ImageFDAHead",
+    "InstanceFDAHead",
+]
 
 IMG_FDA_HEAD_REGISTRY = Registry("IMG_FDA_HEAD")
 INSTANCE_FDA_HEAD_REGISTRY = Registry("INSTANCE_FDA_HEAD")

@@ -6,45 +6,47 @@ def add_fooc_config(cfg):
     _C = cfg
 
     _C.DATASETS.ROOT_DIR = "/lhome/peizhli/datasets"
-    # "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"
-    _C.DATASETS.TRAIN = ("Cityscapes_train",)
-    # "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
-    _C.DATASETS.TEST = ("Cityscapes_val",)
+    _C.DATASETS.EQUAL_FREQUENCY = False
 
     _C.DATALOADER.NUM_WORKERS = 2
-    _C.DATALOADER.MAPPER_TRAIN = 'DatasetMapperWrapper'
-    _C.DATALOADER.MAPPER_TEST = 'ExtendedDatasetMapper'
-    _C.DATALOADER.SAMPLER_TRAIN = 'EquallyDatasetsTrainingSampler'
-    _C.DATALOADER.SELECTION_TYPE = 'simple'
+    _C.DATALOADER.MAPPER_TRAIN = "DatasetMapperWrapper"
+    _C.DATALOADER.MAPPER_TEST = "ExtendedDatasetMapper"
+    _C.DATALOADER.SAMPLER_TRAIN = "EquallyDatasetsTrainingSampler"
+    _C.DATALOADER.SELECTION_TYPE = "simple"
+    _C.DATALOADER.CLIP_BOXES_TO_IMAGE_SIZE = True
 
-    # _C.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml")
-    # _C.MODEL.WEIGHTS = '/lhome/peizhli/projects/model_zoo/model_final_f97cb7.pkl' # original Resnet model
-    _C.MODEL.WEIGHTS = '/lhome/peizhli/projects/FOOC/baseline/cityscapes_iter50000/model_final.pth'
-    
-    _C.MODEL.IMG_FDA_HEAD.NAME = 'IMG_FDA_HEAD'
+    _C.MODEL.IMG_FDA_ON = False
+    _C.MODEL.INSTANCE_FDA_ON = False
+
+    _C.MODEL.VGG = CN()
+    _C.MODEL.VGG.OUT_FEATURES = ["conv5_3"]
+
+    # _C.MODEL.WEIGHTS = "https://download.pytorch.org/models/vgg16-397923af.pth"
+    # _C.MODEL.WEIGHTS = "/lhome/peizhli/projects/model_zoo/vgg16-397923af.pth"
+    _C.MODEL.WEIGHTS = ""
+
+    _C.MODEL.IMG_FDA_HEAD = CN()
+    _C.MODEL.IMG_FDA_HEAD.NAME = "IMG_FDA_HEAD"
+    _C.MODEL.IMG_FDA_HEAD.IN_FEATURES = ["conv5_3"]
     _C.MODEL.IMG_FDA_HEAD.GRL_GAMMA = 0.1
     _C.MODEL.IMG_FDA_HEAD.LOSS_LAMBDA = 1.0
     _C.MODEL.IMG_FDA_HEAD.LOSS_TYPE = "cross_entropy"
     _C.MODEL.IMG_FDA_HEAD.FOCAL_GAMMA = 3.
 
-    _C.MODEL.INSTANCE_FDA_HEAD.NAME = 'INSTANCE_FDA_HEAD'
+    _C.MODEL.INSTANCE_FDA_HEAD = CN()
+    _C.MODEL.INSTANCE_FDA_HEAD.NAME = "INSTANCE_FDA_HEAD"
     _C.MODEL.INSTANCE_FDA_HEAD.GRL_GAMMA = 0.1
     _C.MODEL.INSTANCE_FDA_HEAD.LOSS_LAMBDA = 1.0
     _C.MODEL.INSTANCE_FDA_HEAD.LOSS_TYPE = "cross_entropy"
     _C.MODEL.INSTANCE_FDA_HEAD.FOCAL_GAMMA = 3.
-
-    _C.SOLVER.IMS_PER_BATCH = 6
-    _C.SOLVER.BASE_LR = 1e-4
-    _C.SOLVER.MAX_ITER = 100000
-    _C.SOLVER.MOMENTUM = 0.9
-    _C.SOLVER.WEIGHT_DECAY = 5e-4
+    _C.MODEL.INSTANCE_FDA_HEAD.POOLER_RESOLUTION = 14
+    _C.MODEL.INSTANCE_FDA_HEAD.POOLER_SAMPLING_RATIO = 0
+    _C.MODEL.INSTANCE_FDA_HEAD.POOLER_TYPE = "ROIAlignV2"
+    _C.MODEL.INSTANCE_FDA_HEAD.USE_REFINED = True
 
     _C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
     # No. of classes = ['person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle']
     _C.MODEL.ROI_HEADS.NUM_CLASSES = 8
-
-    _C.TEST.EVAL_PERIOD = 5000
-    _C.OUTPUT_DIR = '/lhome/peizhli/projects/FOOC/baseline/cityscapes_iter50000'
 
     _C.FOOC = CN()
     _C.FOOC.NUM_DOMAINS = 2
@@ -56,14 +58,10 @@ def add_fooc_config(cfg):
     _C.FOOC.SOURCE = CN()
     _C.FOOC.SOURCE.COMPUTE_DET_LOSS = True
     _C.FOOC.SOURCE.COMPUTE_INST_LOSS = True
-    _C.FOOC.SOURCE.COMPUTE_3D_LOSS = True
-    _C.FOOC.SOURCE.COMPUTE_3D_REPROJECTION_LOSS = False
 
     _C.FOOC.TARGET = CN()
     _C.FOOC.TARGET.COMPUTE_DET_LOSS = True
     _C.FOOC.TARGET.COMPUTE_INST_LOSS = False
-    _C.FOOC.TARGET.COMPUTE_3D_LOSS = False
-    _C.FOOC.TARGET.COMPUTE_3D_REPROJECTION_LOSS = False
 
     _C.FOOC.DATASETS = CN()
     _C.FOOC.DATASETS.ONLINE_LOADING = False

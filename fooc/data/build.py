@@ -241,6 +241,13 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
             for dataset_i_dicts, proposal_file in zip(dataset_dicts, proposal_files)
         ]
 
+    for dataset_dict in dataset_dicts:
+        has_instances = "annotations" in dataset_dict[0]
+        if filter_empty and has_instances:
+            dataset_dict = filter_images_with_only_crowd_annotations(dataset_dict)
+        if min_keypoints > 0 and has_instances:
+            dataset_dict = filter_images_with_few_keypoints(dataset_dict, min_keypoints)
+
     # original datasets merging
     # dataset_dicts = list(itertools.chain.from_iterable(dataset_dicts))
     # DA datasets merging
@@ -249,12 +256,6 @@ def get_detection_dataset_dicts(names, filter_empty=True, min_keypoints=0, propo
     dataset_name_to_indices = {
         name: indices for name, indices in zip(names, dataset_indices)
     }
-
-    has_instances = "annotations" in dataset_dicts[0]
-    if filter_empty and has_instances:
-        dataset_dicts = filter_images_with_only_crowd_annotations(dataset_dicts)
-    if min_keypoints > 0 and has_instances:
-        dataset_dicts = filter_images_with_few_keypoints(dataset_dicts, min_keypoints)
 
     if has_instances:
         try:
@@ -569,5 +570,7 @@ def merge_dataset_dicts_list(dataset_dicts_list, equal_frequency: bool):
         end_index = start_index + len(dataset_dicts)
         dataset_indices.append(list(range(start_index, end_index)))
         start_index = end_index
+    
+    # print ([[len(d), len(i)] for d, i in zip(dataset_dicts_list, dataset_indices)])
 
     return list(itertools.chain.from_iterable(dataset_dicts_list)), dataset_indices
