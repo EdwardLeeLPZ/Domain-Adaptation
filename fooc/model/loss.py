@@ -28,23 +28,27 @@ class ImageFDALoss(nn.Module):
         self.focal_gamma = focal_gamma
 
     def forward(self, img_fda_logits, targets):
-        targets_resized = _rezise_targets(targets, img_fda_logits.size(-2), img_fda_logits.size(-1))
+        losses = []
+        for logits in img_fda_logits:
+            targets_resized = _rezise_targets(targets, logits.size(-2), logits.size(-1))
 
-        if self.loss_type == "cross_entropy":
-            loss = F.binary_cross_entropy_with_logits(
-                img_fda_logits, targets_resized, reduction='mean',
-            )
-        elif self.loss_type == "l2":
-            scores = torch.sigmoid(img_fda_logits)
-            loss = torch.norm(scores - targets_resized, p=2, dim=1).mean()
-        elif self.loss_type == "focal":
-            loss = sigmoid_focal_loss(
-                img_fda_logits, targets_resized, gamma=self.focal_gamma, reduction="mean"
-            )
-        else:
-            raise ValueError(f"Unsupported loss type \"{self.loss_type}\"")
+            if self.loss_type == "cross_entropy":
+                loss = F.binary_cross_entropy_with_logits(
+                    logits, targets_resized, reduction='mean',
+                )
+            elif self.loss_type == "l2":
+                scores = torch.sigmoid(logits)
+                loss = torch.norm(scores - targets_resized, p=2, dim=1).mean()
+            elif self.loss_type == "focal":
+                loss = sigmoid_focal_loss(
+                    logits, targets_resized, gamma=self.focal_gamma, reduction="mean"
+                )
+            else:
+                raise ValueError(f"Unsupported loss type \"{self.loss_type}\"")
 
-        return loss * self.loss_lambda
+            losses.append(loss)
+
+        return sum(losses) / (len(losses) + 1e-8) * self.loss_lambda
 
 
 class InstanceFDALoss(nn.Module):

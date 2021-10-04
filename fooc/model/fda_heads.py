@@ -67,9 +67,10 @@ class _GradientReverser(autograd.Function):
 
 @IMG_FDA_HEAD_REGISTRY.register()
 class ImageFDAHead(nn.Module):
-    def __init__(self, cfg, input_shape) -> None:
+    def __init__(self, cfg, input_shapes) -> None:
         super().__init__()
         self.device = torch.device(cfg.MODEL.DEVICE)
+        self.in_features = cfg.MODEL.IMG_FDA_HEAD.IN_FEATURES
 
         num_domains = cfg.FOOC.NUM_DOMAINS
         GRL_gamma = cfg.MODEL.IMG_FDA_HEAD.GRL_GAMMA
@@ -77,36 +78,33 @@ class ImageFDAHead(nn.Module):
         loss_type = cfg.MODEL.IMG_FDA_HEAD.LOSS_TYPE
         focal_gamma = cfg.MODEL.IMG_FDA_HEAD.FOCAL_GAMMA
 
+        in_channels = [input_shapes[f].channels for f in self.in_features]
+
         # ----- Module Architecture ----- #
-        self.GRL = nn.Sequential(OrderedDict([
-            ('IMG_GRL', GradientReversalLayer(GRL_gamma)),
-        ]))  # Grad Reversal Layer
+        self.GRLs = nn.ModuleList()  # Grad Reversal Layers
+        self.convs1 = nn.ModuleList()  # First Convolutional Layers
+        self.relus = nn.ModuleList()  # ReLU Layers
+        self.convs2 = nn.ModuleList()  # Second Convolutional Layers
 
-        self.conv1 = nn.Sequential(OrderedDict([
-            ('IMG_conv1', nn.Conv2d(in_channels=input_shape.channels,
-                                    out_channels=512,
-                                    kernel_size=1,
-                                    stride=1)),
-        ]))  # First Convolutional Layers
-
-        self.relu = nn.Sequential(OrderedDict([
-            ('IMG_ReLU', nn.ReLU()),
-        ]))   # ReLU Layers
-
-        self.conv2 = nn.Sequential(OrderedDict([
-            ('IMG_conv2', nn.Conv2d(in_channels=512,
-                                    out_channels=num_domains if num_domains != 2 else 1,
-                                    kernel_size=1,
-                                    stride=1)),
-        ]))  # Second Convolutional Layers
+        for in_channel in in_channels:
+            self.GRLs.append(GradientReversalLayer(GRL_gamma),)
+            self.convs1.append(nn.Conv2d(
+                in_channels=in_channel, out_channels=512, kernel_size=1, stride=1),
+            )
+            self.relus.append(nn.ReLU(),)
+            self.convs2.append(nn.Conv2d(
+                in_channels=512, out_channels=num_domains if num_domains != 2 else 1, kernel_size=1, stride=1),
+            )
 
         # ----- Initialization -----#
-        for layer in [self.conv1[0], self.conv2[0]]:
-            nn.init.normal_(layer.weight, std=0.001)
-            nn.init.constant_(layer.bias, 0)
+        for layer in [*self.convs1, *self.convs2]:
+            torch.nn.init.normal_(layer.weight, std=0.001)
+            torch.nn.init.constant_(layer.bias, 0)
 
-            if cfg.MODEL.INSTANCE_FDA_HEAD.SN:
-                layer = nn.utils.spectral_norm(layer, name='weight', n_power_iterations=1)
+            if cfg.MODEL.IMG_FDA_HEAD.SN:
+                layer = nn.utils.spectral_norm(
+                    layer, name='weight', n_power_iterations=1
+                )
 
         # ----- Loss -----#
         self.loss = ImageFDALoss(loss_lambda, loss_type, focal_gamma)
@@ -117,17 +115,19 @@ class ImageFDAHead(nn.Module):
         if not self.training:
             return [], {}
 
-        x = features
-        if not skip_GRL:
-            x = self.GRL(x)
-        x = self.conv1(x)
-        x = self.relu(x)
-        x = self.conv2(x)
-        logits = x
+        logits = []
+        for idx, f in enumerate(self.in_features):
+            x = features[f]
+            if not skip_GRL:
+                x = self.GRLs[idx](x)
+            x = self.convs1[idx](x)
+            x = self.relus[idx](x)
+            x = self.convs2[idx](x)
+            logits.append(x)
 
         loss = self.loss(logits, targets)
 
-        return logits, {'loss_img_fda': loss}
+        return logits, {'loss_fda_image': loss}
 
 
 @INSTANCE_FDA_HEAD_REGISTRY.register()
@@ -148,7 +148,7 @@ class InstanceFDAHead(nn.Module):
         ]))  # Grad Reversal Layer
 
         self.fc1 = nn.Sequential(OrderedDict([
-            ('INSTANCE_flatten', nn.flatten()),
+            ('INSTANCE_flatten', nn.Flatten()),
             ('INSTANCE_linear1', nn.Linear(input_shape.channels
                                            * input_shape.height * input_shape.width, 1024)),
             ('INSTANCE_ReLU1', nn.ReLU()),
@@ -191,4 +191,4 @@ class InstanceFDAHead(nn.Module):
 
         loss = self.loss(logits, targets)
 
-        return logits, {"loss_instance_fda": loss}
+        return logits, {"loss_fda_instance": loss}

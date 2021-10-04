@@ -76,8 +76,8 @@ class DomainAdaptiveRCNN(GeneralizedRCNN):
         losses.update(proposal_losses)
 
         if self.img_fda_on:
-            _, fda_img_losses = self.img_fda_head(features, gt_domains)
-            losses.update(fda_img_losses)
+            _, fda_image_losses = self.img_fda_head(features, gt_domains)
+            losses.update(fda_image_losses)
 
         # roi heads
         _, detector_losses, cons_reg_roi_fda_logits = self.roi_heads(images, features, proposals, gt_instances)

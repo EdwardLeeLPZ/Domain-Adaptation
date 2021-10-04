@@ -1,7 +1,7 @@
 MODEL:
   META_ARCHITECTURE: "DomainAdaptiveRCNN"
-  IMG_FDA_ON: False
-  INSTANCE_FDA_ON: False
+  IMG_FDA_ON: True
+  INSTANCE_FDA_ON: True
   BACKBONE:
     NAME: "build_vgg_backbone"
   VGG:
@@ -47,15 +47,15 @@ FOOC:
     COMPUTE_DET_LOSS: False
     COMPUTE_INST_LOSS: False
 SOLVER:
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 4
   BASE_LR: 1e-4
   STEPS: (60000, 80000)
-  MAX_ITER: 1000
+  MAX_ITER: 500
   MOMENTUM: 0.9
   WEIGHT_DECAY: 5e-4
 INPUT:
   MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
 VERSION: 2
 TEST:
-  EVAL_PERIOD: 500
+  EVAL_PERIOD: 100
 OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/da_test"

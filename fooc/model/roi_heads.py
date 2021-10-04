@@ -3,6 +3,7 @@ import torch
 from detectron2.layers import ShapeSpec
 from detectron2.modeling import ROI_HEADS_REGISTRY, StandardROIHeads
 from detectron2.modeling.poolers import ROIPooler
+from detectron2.modeling.roi_heads import select_foreground_proposals
 
 from .fda_heads import build_instance_fda_head
 
@@ -15,19 +16,24 @@ class DomainAdaptiveROIHeads(StandardROIHeads):
     def __init__(self, cfg, input_shape):
         super().__init__(cfg, input_shape)
         self.cfg = cfg
-        self._init_instance_fda_head(cfg)
+        self._init_instance_fda_head(cfg, input_shape)
 
-    def _init_instance_fda_head(self, cfg):
+    def _init_instance_fda_head(self, cfg, input_shape):
         self.instance_fda_on = cfg.MODEL.INSTANCE_FDA_ON
         if not self.instance_fda_on:
             return
 
         pooler_resolution = cfg.MODEL.INSTANCE_FDA_HEAD.POOLER_RESOLUTION
-        pooler_scales = tuple(1.0 / self.feature_strides[k] for k in self.in_features)
+        pooler_scales     = tuple(1.0 / input_shape[k].stride for k in self.in_features)
         sampling_ratio = cfg.MODEL.INSTANCE_FDA_HEAD.POOLER_SAMPLING_RATIO
         pooler_type = cfg.MODEL.INSTANCE_FDA_HEAD.POOLER_TYPE
 
-        in_channels = [self.feature_channels[f] for f in self.in_features][0]
+        # If InstanceFDAHead is applied on multiple feature maps (as in FPN),
+        # then we share the same predictors and therefore the channel counts must be the same
+        in_channels = [input_shape[f].channels for f in self.in_features]
+        # Check all channel counts are equal
+        assert len(set(in_channels)) == 1, in_channels
+        in_channels = in_channels[0]
 
         self.fda_pooler = ROIPooler(
             output_size=pooler_resolution,
@@ -54,13 +60,18 @@ class DomainAdaptiveROIHeads(StandardROIHeads):
             return None, {} if self.training else instances
 
         if self.training:
-            proposals = instances
+            if self.cfg.MODEL.INSTANCE_FDA_HEAD.FILTER_FOREGROUND:
+                proposals, _ = select_foreground_proposals(instances, self.num_classes)
+            else:
+                proposals = instances
             # use either the region proposals or the refined box predictions
             # to ROIAlign, depending on inference mode
             if self.cfg.MODEL.INSTANCE_FDA_HEAD.USE_REFINED:
                 boxes = [x.pred_boxes for x in proposals]
             else:
                 boxes = [x.proposal_boxes for x in proposals]
+            
+            features = [features[f] for f in self.in_features]
 
             fda_features = self.fda_pooler(features, boxes)  # [M, C, output_size, output_size]
 
