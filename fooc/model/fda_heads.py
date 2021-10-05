@@ -148,7 +148,7 @@ class InstanceFDAHead(nn.Module):
         ]))  # Grad Reversal Layer
 
         self.fc1 = nn.Sequential(OrderedDict([
-            ('INSTANCE_flatten', nn.Flatten()),
+            ('INSTANCE_flatten', nn.Flatten(start_dim=1, end_dim=-1)),
             ('INSTANCE_linear1', nn.Linear(input_shape.channels
                                            * input_shape.height * input_shape.width, 1024)),
             ('INSTANCE_ReLU1', nn.ReLU()),

@@ -33,10 +33,10 @@ MODEL:
 DATASETS:
   ROOT_DIR: "/lhome/peizhli/datasets"
   # "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"  
-  TRAIN: ("Cityscapes_train",)
+  TRAIN: ("Cityscapes_train", "FoggyCityscapes_train")
   # "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
   TEST: ("Cityscapes_val",)
-  EQUAL_FREQUENCY: False
+  EQUAL_FREQUENCY: True
 DATALOADER:
   SAMPLER_TRAIN: EquallyDatasetsTrainingSampler
 FOOC:
@@ -50,12 +50,12 @@ SOLVER:
   IMS_PER_BATCH: 4
   BASE_LR: 1e-4
   STEPS: (60000, 80000)
-  MAX_ITER: 500
+  MAX_ITER: 10000
   MOMENTUM: 0.9
   WEIGHT_DECAY: 5e-4
 INPUT:
   MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
 VERSION: 2
 TEST:
-  EVAL_PERIOD: 100
+  EVAL_PERIOD: 1000
 OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/da_test"

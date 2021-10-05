@@ -61,14 +61,14 @@ class InstanceFDALoss(nn.Module):
     def forward(self, instance_fda_logits, instances):
         gt_domains = []
         for instances_per_img in instances:
-            if len(instances_per_img) > 0 and hasattr(instances_per_img, "domain"):
-                gt_domains_per_img = instances_per_img.domain.unsqueeze(-1)
+            if len(instances_per_img) > 0 and hasattr(instances_per_img, "gt_domains"):
+                gt_domains_per_img = instances_per_img.gt_domains.unsqueeze(-1)
                 gt_domains.append(gt_domains_per_img)
                 # Sanity check: All instances in an image should have the same domain label
                 assert gt_domains_per_img.unique().numel() == 1
 
         # if there is no ground truth, there is no loss to compute
-        if len(gt_domains) == 0:
+        if len(gt_domains) == 0 or instance_fda_logits.shape != cat(gt_domains, dim=0).shape:
             return instance_fda_logits.sum() * 0
 
         if self.loss_type == "cross_entropy":
