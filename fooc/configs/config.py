@@ -78,12 +78,14 @@ def add_fooc_config(cfg):
     _C.FOOC.DATASETS.CITYSCAPES.SUBSAMPLE = -1
     _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "source"
     _C.FOOC.DATASETS.CITYSCAPES.LABEL_SPACE = "Cityscapes"
+    _C.FOOC.DATASETS.CITYSCAPES.EVALUATOR_TYPE = "coco"
     _C.FOOC.DATASETS.CITYSCAPES.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.FOGGYCITYSCAPES = CN()
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.SUBSAMPLE = -1
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.DOMAIN = "target"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LABEL_SPACE = "Cityscapes"
+    _C.FOOC.DATASETS.FOGGYCITYSCAPES.EVALUATOR_TYPE = "coco"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LOAD_MASKS = True
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.BETA = 0.01
 
@@ -92,6 +94,7 @@ def add_fooc_config(cfg):
     _C.FOOC.DATASETS.SIM10K.DOMAIN = "target"
     # "Sim10k" or "Sim10kCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.SIM10K.LABEL_SPACE = "Sim10kCityscapesCommon"
+    _C.FOOC.DATASETS.SIM10K.EVALUATOR_TYPE = "coco"
     _C.FOOC.DATASETS.SIM10K.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.KITTI = CN()
@@ -99,5 +102,6 @@ def add_fooc_config(cfg):
     _C.FOOC.DATASETS.KITTI.DOMAIN = "target"
     # "Kitti" or "KittiCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.KITTI.LABEL_SPACE = "KittiCityscapesCommon"
+    _C.FOOC.DATASETS.KITTI.EVALUATOR_TYPE = "coco"
     # Kitti object challenge has no instance masks
     # _C.FOOC.DATASETS.KITTI.LOAD_MASKS = True

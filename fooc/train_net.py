@@ -65,6 +65,7 @@ from data.build import (
     build_detection_test_loader,
 )
 from model import da_rcnn
+from evaluation.evaluation import ExtendedCOCOEvaluator
 
 class Trainer(DefaultTrainer):
     """
@@ -95,7 +96,8 @@ class Trainer(DefaultTrainer):
                 )
             )
         if evaluator_type in ["coco", "coco_panoptic_seg"]:
-            evaluator_list.append(COCOEvaluator(dataset_name, output_dir=output_folder))
+            # evaluator_list.append(COCOEvaluator(dataset_name, output_dir=output_folder))
+            evaluator_list.append(ExtendedCOCOEvaluator(dataset_name, output_dir=output_folder))
         if evaluator_type == "coco_panoptic_seg":
             evaluator_list.append(COCOPanopticEvaluator(dataset_name, output_folder))
         if evaluator_type == "cityscapes_instance":

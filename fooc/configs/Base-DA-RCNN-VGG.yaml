@@ -62,4 +62,4 @@ INPUT:
 VERSION: 2
 TEST:
   EVAL_PERIOD: 5000
-OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/domain_adaptation_foggycityscapes_baseline"
+OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/evaluator"

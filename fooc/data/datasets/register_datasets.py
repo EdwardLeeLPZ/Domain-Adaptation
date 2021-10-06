@@ -15,6 +15,8 @@ from detectron2.structures import BoxMode
 from .label_spaces import *
 
 # ==================== Cityscapes ==================== #
+
+
 def register_cityscapes(cfg, root_dir="datasets"):
     """
     Register Cityscapes dataset in the standard Detectron2 annotation format for
@@ -39,14 +41,14 @@ def register_cityscapes(cfg, root_dir="datasets"):
     # according to the preset split method, and then register them
     for split in ["train", "val", "test"]:
         DatasetCatalog.register(
-            "Cityscapes_"+split,
+            "Cityscapes_" + split,
             lambda data_dir=data_dir, split=split, config=cfg:
                 load_cityscapes_samples(data_dir, split, config)
         )
 
-        MetadataCatalog.get("Cityscapes_"+split).set(
+        MetadataCatalog.get("Cityscapes_" + split).set(
             data_dir=data_dir,
-            evaluator_type="coco",
+            evaluator_type=cfg.FOOC.DATASETS.CITYSCAPES.EVALUATOR_TYPE,
             domain=domain,
             thing_classes=thing_classes,
             stuff_classes=stuff_classes,
@@ -233,6 +235,8 @@ def cityscapes_sample_to_dict(file, is_train, domain, label_space):
     return record
 
 # ==================== Foggy Cityscapes ==================== #
+
+
 def register_foggy_cityscapes(cfg, root_dir="datasets"):
     """
     Register Foggy Cityscapes dataset in the standard Detectron2 annotation format for
@@ -258,14 +262,14 @@ def register_foggy_cityscapes(cfg, root_dir="datasets"):
     # according to the preset split method, and then register them
     for split in ["train", "val", "test"]:
         DatasetCatalog.register(
-            "FoggyCityscapes_"+split,
+            "FoggyCityscapes_" + split,
             lambda data_dir=data_dir, split=split, config=cfg:
                 load_foggy_cityscapes_samples(data_dir, split, config)
         )
 
-        MetadataCatalog.get("FoggyCityscapes_"+split).set(
+        MetadataCatalog.get("FoggyCityscapes_" + split).set(
             data_dir=data_dir,
-            evaluator_type="coco",
+            evaluator_type=cfg.FOOC.DATASETS.FOGGYCITYSCAPES.EVALUATOR_TYPE,
             domain=domain,
             thing_classes=thing_classes,
             stuff_classes=stuff_classes,
@@ -284,7 +288,7 @@ def _get_foggy_cityscapes_files(image_dir, gt_dir, beta, logger):
 
             suffix = f"leftImg8bit_foggy_beta_{beta}.png"
             assert image_file.endswith(suffix), image_file
-            basename = image_file[len(city_img_dir)+1: -len(suffix)]
+            basename = image_file[len(city_img_dir) + 1: -len(suffix)]
 
             instance_file = os.path.join(
                 city_gt_dir, basename + "gtFine_instanceIds.png")
@@ -454,6 +458,8 @@ def foggy_cityscapes_sample_to_dict(file, is_train, domain, label_space):
     return record
 
 # ==================== Sim10k ==================== #
+
+
 def register_sim10k(cfg, root_dir="datasets"):
     """
     Register SIM10k dataset in the standard Detectron2 annotation format for
@@ -477,14 +483,14 @@ def register_sim10k(cfg, root_dir="datasets"):
     # split the data set into the training set and the validation set according to the preset split method, and then register them
     for split in ["train", "val"]:
         DatasetCatalog.register(
-            "Sim10k_"+split,
+            "Sim10k_" + split,
             lambda data_dir=data_dir, split=split, config=cfg:
                 load_sim10k_samples(data_dir, split, config)
         )
 
-        MetadataCatalog.get("Sim10k_"+split).set(
+        MetadataCatalog.get("Sim10k_" + split).set(
             data_dir=data_dir,
-            evaluator_type="coco",
+            evaluator_type=cfg.FOOC.DATASETS.SIM10K.EVALUATOR_TYPE,
             domain=domain,
             thing_classes=thing_classes,
             stuff_classes=stuff_classes,
@@ -639,6 +645,8 @@ def sim10k_sample_to_dict(image_id, data_dir, is_train, domain, label_space):
     return record
 
 # ==================== KITTI ==================== #
+
+
 def register_kitti(cfg, root_dir="datasets"):
     """
     Register KITTI dataset in the standard Detectron2 annotation format for
@@ -662,14 +670,14 @@ def register_kitti(cfg, root_dir="datasets"):
     # split the data set into the training set and the validation set according to the preset split method, and then register them
     for split in ["train", "val"]:
         DatasetCatalog.register(
-            "Kitti_"+split,
+            "Kitti_" + split,
             lambda data_dir=data_dir, split=split, config=cfg:
                 load_kitti_samples(data_dir, split, config)
         )
 
-        MetadataCatalog.get("Kitti_"+split).set(
+        MetadataCatalog.get("Kitti_" + split).set(
             data_dir=data_dir,
-            evaluator_type="coco",
+            evaluator_type=cfg.FOOC.DATASETS.KITTI.EVALUATOR_TYPE,
             domain=domain,
             thing_classes=thing_classes,
             stuff_classes=stuff_classes,
