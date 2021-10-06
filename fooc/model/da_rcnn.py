@@ -5,7 +5,7 @@ from detectron2.utils.logger import log_first_n
 from detectron2.modeling.meta_arch.build import META_ARCH_REGISTRY
 from detectron2.modeling.meta_arch.rcnn import GeneralizedRCNN
 
-from .fda_heads import build_img_fda_head
+from .fda_heads import build_img_fda_head, DAFRCNNConsistReg
 
 @META_ARCH_REGISTRY.register()
 class DomainAdaptiveRCNN(GeneralizedRCNN):
@@ -16,6 +16,7 @@ class DomainAdaptiveRCNN(GeneralizedRCNN):
     def __init__(self, cfg):
         super().__init__(cfg)
         self._init_img_fda_head(cfg)
+        self._init_fda_consistency_regularization(cfg)
     
     def _init_img_fda_head(self, cfg):
         self.img_fda_on = cfg.MODEL.IMG_FDA_ON
@@ -25,6 +26,13 @@ class DomainAdaptiveRCNN(GeneralizedRCNN):
         self.img_fda_head = build_img_fda_head(
             cfg, self.backbone.output_shape()
         )
+    
+    def _init_fda_consistency_regularization(self, cfg):
+        self.fda_consistency_regularization_on = cfg.MODEL.FDA_CONSISTENCY_REGULARIZATION_ON
+        if self.fda_consistency_regularization_on:
+            assert cfg.MODEL.IMG_FDA_ON, "Image FDA must be available for consistency regularization but isn't."
+            assert cfg.MODEL.INSTANCE_FDA_ON, "ROI FDA must be available for consistency regularization but isn't."
+            self.fda_consistency_regularization = DAFRCNNConsistReg(cfg)
     
     def forward(self, batched_inputs):
         """
@@ -87,8 +95,15 @@ class DomainAdaptiveRCNN(GeneralizedRCNN):
             _, fda_image_losses = self.img_fda_head(features, gt_domains)
             losses.update(fda_image_losses)
 
+            if self.fda_consistency_regularization_on:
+                cons_reg_img_fda_logits, _ = self.img_fda_head(features, gt_domains, skip_GRL=True)
+
         # roi heads
-        _, detector_losses, cons_reg_roi_fda_logits = self.roi_heads(images, features, proposals, gt_instances)
-        
+        _, detector_losses, cons_reg_instance_fda_logits = self.roi_heads(images, features, proposals, gt_instances)
         losses.update(detector_losses)
+
+        if self.fda_consistency_regularization_on:
+            consistency_regularization_loss = self.fda_consistency_regularization(
+                cons_reg_img_fda_logits, cons_reg_instance_fda_logits)
+            losses.update(consistency_regularization_loss)
         return losses

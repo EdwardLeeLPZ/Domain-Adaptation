@@ -17,6 +17,7 @@ def add_fooc_config(cfg):
 
     _C.MODEL.IMG_FDA_ON = False
     _C.MODEL.INSTANCE_FDA_ON = False
+    _C.MODEL.FDA_CONSISTENCY_REGULARIZATION_ON = False
 
     _C.MODEL.VGG = CN()
     _C.MODEL.VGG.OUT_FEATURES = ["conv5_3"]
@@ -47,6 +48,11 @@ def add_fooc_config(cfg):
     _C.MODEL.INSTANCE_FDA_HEAD.FILTER_FOREGROUND = False
     _C.MODEL.INSTANCE_FDA_HEAD.USE_REFINED = False
 
+    _C.MODEL.FDA_CONSISTENCY_REGULARIZATION = CN()
+    _C.MODEL.FDA_CONSISTENCY_REGULARIZATION.LOSS_WEIGHT = 1.
+    _C.MODEL.FDA_CONSISTENCY_REGULARIZATION.LOSS_NORM = "l2"
+    _C.MODEL.FDA_CONSISTENCY_REGULARIZATION.SIZE_AVERAGE = True
+
     _C.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
     # No. of classes = ['person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle', 'bicycle']
     _C.MODEL.ROI_HEADS.NUM_CLASSES = 8
@@ -60,11 +66,9 @@ def add_fooc_config(cfg):
 
     _C.FOOC.SOURCE = CN()
     _C.FOOC.SOURCE.COMPUTE_DET_LOSS = True
-    _C.FOOC.SOURCE.COMPUTE_INST_LOSS = True
 
     _C.FOOC.TARGET = CN()
-    _C.FOOC.TARGET.COMPUTE_DET_LOSS = True
-    _C.FOOC.TARGET.COMPUTE_INST_LOSS = False
+    _C.FOOC.TARGET.COMPUTE_DET_LOSS = False
 
     _C.FOOC.DATASETS = CN()
     _C.FOOC.DATASETS.ONLINE_LOADING = False
@@ -72,27 +76,27 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS.CITYSCAPES = CN()
     _C.FOOC.DATASETS.CITYSCAPES.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "target"
+    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "source"
     _C.FOOC.DATASETS.CITYSCAPES.LABEL_SPACE = "Cityscapes"
     _C.FOOC.DATASETS.CITYSCAPES.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.FOGGYCITYSCAPES = CN()
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.FOGGYCITYSCAPES.DOMAIN = "source"
+    _C.FOOC.DATASETS.FOGGYCITYSCAPES.DOMAIN = "target"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LABEL_SPACE = "Cityscapes"
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.LOAD_MASKS = True
     _C.FOOC.DATASETS.FOGGYCITYSCAPES.BETA = 0.01
 
     _C.FOOC.DATASETS.SIM10K = CN()
     _C.FOOC.DATASETS.SIM10K.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.SIM10K.DOMAIN = "source"
+    _C.FOOC.DATASETS.SIM10K.DOMAIN = "target"
     # "Sim10k" or "Sim10kCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.SIM10K.LABEL_SPACE = "Sim10kCityscapesCommon"
     _C.FOOC.DATASETS.SIM10K.LOAD_MASKS = True
 
     _C.FOOC.DATASETS.KITTI = CN()
     _C.FOOC.DATASETS.KITTI.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.KITTI.DOMAIN = "source"
+    _C.FOOC.DATASETS.KITTI.DOMAIN = "target"
     # "Kitti" or "KittiCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.KITTI.LABEL_SPACE = "KittiCityscapesCommon"
     # Kitti object challenge has no instance masks

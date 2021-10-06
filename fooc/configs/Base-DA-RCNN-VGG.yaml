@@ -2,12 +2,15 @@ MODEL:
   META_ARCHITECTURE: "DomainAdaptiveRCNN"
   IMG_FDA_ON: True
   INSTANCE_FDA_ON: True
+  FDA_CONSISTENCY_REGULARIZATION_ON: True
   BACKBONE:
     NAME: "build_vgg_backbone"
   VGG:
     OUT_FEATURES: ["conv5_3"]
   # WEIGHTS: "https://download.pytorch.org/models/vgg16-397923af.pth"
   # WEIGHTS: "/lhome/peizhli/projects/model_zoo/vgg16-397923af.pth"
+  ANCHOR_GENERATOR:
+    SIZES: [[128, 256, 512]]
   RPN:
     IN_FEATURES: ["conv5_3"]
     PRE_NMS_TOPK_TRAIN: 2000  # Per FPN level
@@ -17,6 +20,7 @@ MODEL:
     # which is approximately 1000 proposals per-image since the default batch size for FPN is 2.
     POST_NMS_TOPK_TRAIN: 1000
     POST_NMS_TOPK_TEST: 1000
+    NMS_THRESH: 0.7
   IMG_FDA_HEAD:
     NAME: "ImageFDAHead"
     IN_FEATURES: ["conv5_3"]
@@ -33,29 +37,29 @@ MODEL:
 DATASETS:
   ROOT_DIR: "/lhome/peizhli/datasets"
   # "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"  
-  TRAIN: ("Cityscapes_train", "FoggyCityscapes_train")
+  TRAIN: ("Cityscapes_train", "FoggyCityscapes_train",)
   # "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
-  TEST: ("Cityscapes_val",)
+  TEST: ("FoggyCityscapes_val",)
   EQUAL_FREQUENCY: True
 DATALOADER:
   SAMPLER_TRAIN: EquallyDatasetsTrainingSampler
 FOOC:
   SOURCE:
-    COMPUTE_DET_LOSS: False
-    COMPUTE_INST_LOSS: False
+    COMPUTE_DET_LOSS: True
   TARGET:
     COMPUTE_DET_LOSS: False
-    COMPUTE_INST_LOSS: False
 SOLVER:
-  IMS_PER_BATCH: 4
-  BASE_LR: 1e-4
-  STEPS: (60000, 80000)
-  MAX_ITER: 10000
+  IMS_PER_BATCH: 8
+  BASE_LR: 1e-3
+  GAMMA: 0.1
+  STEPS: (50000,)
+  MAX_ITER: 70000
   MOMENTUM: 0.9
   WEIGHT_DECAY: 5e-4
 INPUT:
-  MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+  MIN_SIZE_TRAIN: (500,)
+  MIN_SIZE_TEST: 500
 VERSION: 2
 TEST:
-  EVAL_PERIOD: 1000
-OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/da_test"
+  EVAL_PERIOD: 5000
+OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/domain_adaptation_foggycityscapes_bseline"

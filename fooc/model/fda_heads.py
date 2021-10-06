@@ -192,3 +192,91 @@ class InstanceFDAHead(nn.Module):
         loss = self.loss(logits, targets)
 
         return logits, {"loss_fda_instance": loss}
+
+
+class DAFRCNNConsistReg:
+    """
+    Computes the consistency regularization loss given by DAFRCNN https://arxiv.org/pdf/1803.03243.pdf,  formula (8)
+    """
+
+    def __init__(self, cfg):
+        self.loss_weight = cfg.MODEL.FDA_CONSISTENCY_REGULARIZATION.LOSS_WEIGHT
+        self.loss_norm = cfg.MODEL.FDA_CONSISTENCY_REGULARIZATION.LOSS_NORM
+        self.size_average = cfg.MODEL.FDA_CONSISTENCY_REGULARIZATION.SIZE_AVERAGE
+
+    def __call__(self, img_fda_logits, instance_fda_logits):
+        losses = fda_consistency_regularization(
+            img_fda_logits, instance_fda_logits, loss_norm=self.loss_norm, size_average=self.size_average
+        )
+
+        losses = {
+            name: loss * self.loss_weight
+            for name, loss in losses.items()
+        }
+        return losses
+
+
+def fda_consistency_regularization(img_fda_logits, instance_fda_logits, loss_norm, size_average):
+    """
+    Computes the consistency regularization loss as stated in the paper
+    `Domain Adaptive Faster R-CNN for Object Detection in the Wild`
+    L_cst = \sum_{i,j}||\frac{1}{|I|}\sum_{u,v}p_i^{(u,v)}-p_{i,j}||_2
+    https://arxiv.org/pdf/1803.03243.pdf,  formula (8)
+    Pytorch implementation: https://github.com/krumo/Domain-Adaptive-Faster-RCNN-PyTorch
+    Args:
+        img_fda_logits(list): list of logits of the image level domain discriminators  [N, 1, H, W],
+                              one of each feature map
+        instance_fda_logits: list of the logits of the instance level domain discriminator  [NUM_BOXES, 1],
+                        one for each batch element
+        loss_norm(str): the distance criterion for instance and image-level probs, one of ["l1", "l2"]
+        size_average(bool): flag that indicates whether loss portions are averaged or summed.
+    Returns:
+        the computed consistency regularization loss (dict[name, Tensor])
+    """
+    assert loss_norm in ["l1", "l2"], loss_norm
+    loss = 0.
+
+    # flatten img fda logits
+    img_fda_logits = [torch.flatten(x, start_dim=1)
+                      for x in img_fda_logits]  # list of [N, 1 x H x W]
+    # activate img fda logits
+    img_fda_preds = [torch.sigmoid(x) for x in img_fda_logits]  # list of [N, 1 x H x W]
+    # mean per feature map
+    img_fda_preds = [torch.mean(x, 1, keepdim=True) for x in img_fda_preds]  # list of [N, 1]
+    # average over different feature maps
+    img_fda_preds = torch.cat(img_fda_preds, dim=1)  # [N, NUM_FEATURE_MAPS]
+    # NOTE: the original implementation computes the consistency regularization only on one image level feature map.
+    #       here we support multiple ones and just average them. This means using one image level feature map results
+    #       in the same method.
+    img_fda_preds = torch.mean(img_fda_preds, dim=1, keepdim=False)  # [N]
+
+    assert len(img_fda_preds) == len(
+        instance_fda_logits), f"{len(img_fda_preds)} != {len(instance_fda_logits)}"
+    for img_fda_preds_per_image, instance_fda_logits_per_image in zip(img_fda_preds, instance_fda_logits):
+        # we must handle the case where no gt are available for an image
+        if instance_fda_logits_per_image.size()[0] == 0:
+            loss = loss + img_fda_preds_per_image.sum() * 0.
+            continue
+
+        # activate roi fda logits
+        instance_fda_logits_per_image = torch.sigmoid(instance_fda_logits_per_image)  # [NUM_BOXES, 1]
+
+        # compute consistency loss for current image
+        diffs_per_image = img_fda_preds_per_image - instance_fda_logits_per_image  # [NUM_BOXES, 1]
+        if loss_norm == "l1":
+            losses_per_image = torch.abs(diffs_per_image)  # [NUM_BOXES, 1]
+        else:
+            losses_per_image = diffs_per_image * diffs_per_image * 0.5  # [NUM_BOXES, 1]
+
+        if size_average:
+            # NOTE: we use the mean over the number of box proposals instead of simple summing them up as in the
+            #       original implementation to be consistent with the box regression loss. In addition, it stabilizes
+            #       the training in the beginning by avoiding high loss in case of a lot of false positives.
+            loss_per_image = torch.mean(losses_per_image)
+        else:
+            loss_per_image = torch.sum(losses_per_image)
+
+        # update loss
+        loss = loss + loss_per_image
+
+    return {"loss_fda_consistency_regularization": loss}
