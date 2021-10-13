@@ -1,7 +1,5 @@
-<<<<<<< HEAD
 # Domain-Adaptation
-A domain adaptation project based on context and global prototype developed on Detectron2
-=======
+### A domain adaptation project based on context and global prototype developed on Detectron2
 <img src=".github/Detectron2-Logo-Horz.svg" width="300" >
 
 Detectron2 is Facebook AI Research's next generation library
@@ -59,4 +57,3 @@ If you use Detectron2 in your research or wish to refer to the baseline results 
   year =         {2019}
 }
 ```
->>>>>>> baseline
