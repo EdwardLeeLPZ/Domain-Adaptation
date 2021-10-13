@@ -37,7 +37,7 @@ MODEL:
 DATASETS:
   ROOT_DIR: "/lhome/peizhli/datasets"
   # Available Datasets: "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"  
-  TRAIN: ("Sim10k_train", "Cityscapes_train",)
+  TRAIN: ("FoggyCityscapes_train", "Cityscapes_train",)
   # Available Datasets: "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
   TEST: ("Cityscapes_val",)
   EQUAL_FREQUENCY: True
@@ -62,4 +62,4 @@ INPUT:
 VERSION: 2
 TEST:
   EVAL_PERIOD: 5000
-OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/sim10k2cityscapes_2"
+OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/foggycityscapes2cityscapes"
