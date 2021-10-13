@@ -5,7 +5,7 @@ from detectron2.config import CfgNode as CN
 def add_fooc_config(cfg):
     _C = cfg
 
-    _C.DATASETS.ROOT_DIR = "/lhome/peizhli/datasets"
+    _C.DATASETS.ROOT_DIR = ""
     _C.DATASETS.EQUAL_FREQUENCY = False
 
     _C.DATALOADER.NUM_WORKERS = 2
@@ -76,7 +76,7 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS.CITYSCAPES = CN()
     _C.FOOC.DATASETS.CITYSCAPES.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "source"
+    _C.FOOC.DATASETS.CITYSCAPES.DOMAIN = "target"
     _C.FOOC.DATASETS.CITYSCAPES.LABEL_SPACE = "Cityscapes"
     _C.FOOC.DATASETS.CITYSCAPES.EVALUATOR_TYPE = "coco"
     _C.FOOC.DATASETS.CITYSCAPES.LOAD_MASKS = True
@@ -91,7 +91,7 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS.SIM10K = CN()
     _C.FOOC.DATASETS.SIM10K.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.SIM10K.DOMAIN = "target"
+    _C.FOOC.DATASETS.SIM10K.DOMAIN = "source"
     # "Sim10k" or "Sim10kCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.SIM10K.LABEL_SPACE = "Sim10kCityscapesCommon"
     _C.FOOC.DATASETS.SIM10K.EVALUATOR_TYPE = "coco"
@@ -99,7 +99,7 @@ def add_fooc_config(cfg):
 
     _C.FOOC.DATASETS.KITTI = CN()
     _C.FOOC.DATASETS.KITTI.SUBSAMPLE = -1
-    _C.FOOC.DATASETS.KITTI.DOMAIN = "target"
+    _C.FOOC.DATASETS.KITTI.DOMAIN = "source"
     # "Kitti" or "KittiCityscapesCommon" (only used for cross-domain object detection test)
     _C.FOOC.DATASETS.KITTI.LABEL_SPACE = "KittiCityscapesCommon"
     _C.FOOC.DATASETS.KITTI.EVALUATOR_TYPE = "coco"

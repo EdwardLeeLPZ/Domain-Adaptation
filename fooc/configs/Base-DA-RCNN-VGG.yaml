@@ -36,10 +36,10 @@ MODEL:
     POOLER_RESOLUTION: 14
 DATASETS:
   ROOT_DIR: "/lhome/peizhli/datasets"
-  # "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"  
-  TRAIN: ("Cityscapes_train", "FoggyCityscapes_train",)
-  # "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
-  TEST: ("FoggyCityscapes_val",)
+  # Available Datasets: "Cityscapes_train", "FoggyCityscapes_train", "Sim10k_train" or "Kitti_train"  
+  TRAIN: ("Sim10k_train", "Cityscapes_train",)
+  # Available Datasets: "Cityscapes_val", "FoggyCityscapes_val", "Sim10k_val" or "Kitti_val"
+  TEST: ("Cityscapes_val",)
   EQUAL_FREQUENCY: True
 DATALOADER:
   SAMPLER_TRAIN: EquallyDatasetsTrainingSampler
@@ -49,7 +49,7 @@ FOOC:
   TARGET:
     COMPUTE_DET_LOSS: False
 SOLVER:
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 2
   BASE_LR: 1e-3
   GAMMA: 0.1
   STEPS: (50000,)
@@ -62,4 +62,4 @@ INPUT:
 VERSION: 2
 TEST:
   EVAL_PERIOD: 5000
-OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/evaluator"
+OUTPUT_DIR: "/lhome/peizhli/projects/FOOC/baseline/sim10k2cityscapes_2"
